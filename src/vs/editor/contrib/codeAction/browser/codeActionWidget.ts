@@ -217,15 +217,15 @@ abstract class ActionList<ListItemAction> extends Disposable {
 	constructor(
 		items: readonly ListItemAction[],
 		showHeaders: boolean,
-		focusCondition: (e: ListItemAction) => boolean,
+		private readonly _focusCondition: (e: ListItemAction) => boolean,
 		@IKeybindingService keybindingService: IKeybindingService,
 	) {
 		super();
 
 		this.domNode = document.createElement('div');
-		this.domNode.classList.add('codeActionList');
+		this.domNode.classList.add('actionList');
 		this.setActions(items, showHeaders, keybindingService);
-		this._register(this.list.onMouseClick(e => this.onListClick(e, focusCondition)));
+		this._register(this.list.onMouseClick(e => this.onListClick(e)));
 		this._register(this.list.onMouseOver(e => this.onListHover(e)));
 		this._register(this.list.onDidChangeFocus(() => this.list.domFocus()));
 		this._register(this.list.onDidChangeSelection(e => this.onListSelection(e)));
@@ -244,7 +244,7 @@ abstract class ActionList<ListItemAction> extends Disposable {
 		this.list.focusNext(1, true);
 	}
 
-	public acceptSelected(options?: { readonly preview?: boolean }) {
+	public acceptSelected(acceptType: string) {
 		const focused = this.list.getFocus();
 		if (focused.length === 0) {
 			return;
@@ -253,11 +253,11 @@ abstract class ActionList<ListItemAction> extends Disposable {
 		const focusIndex = focused[0];
 		const element = this.list.element(focusIndex) as object as any;
 
-		if (element.kind === ActionListItemKind.Header || (element.kind === ActionListItemKind.CodeAction && (element.action as any).action.disabled)) {
+		if (element.kind === ActionListItemKind.Header || (!this._focusCondition(element))) {
 			return;
 		}
 
-		const event = new UIEvent(options?.preview ? previewSelectedEventType : 'acceptSelectedCodeAction');
+		const event = new UIEvent(acceptType);
 		this.list.setSelection([focusIndex], event);
 	}
 
@@ -267,9 +267,9 @@ abstract class ActionList<ListItemAction> extends Disposable {
 		this.list.setFocus(typeof e.index === 'number' ? [e.index] : []);
 	}
 
-	private onListClick(e: IListMouseEvent<ListItemAction>, focusCondition: (e: ListItemAction) => boolean): void {
+	private onListClick(e: IListMouseEvent<ListItemAction>): void {
 		const element = e.element;
-		if (element && focusCondition(element)) {
+		if (element && this._focusCondition(element)) {
 			this.list.setFocus([]);
 		}
 	}
@@ -472,7 +472,7 @@ export class CodeActionWidget extends Disposable {
 	}
 
 	public acceptSelected(options?: { readonly preview?: boolean }) {
-		this.codeActionList.value?.acceptSelected(options);
+		this.codeActionList.value?.acceptSelected(options?.preview ? previewSelectedEventType : 'acceptSelectedCodeAction');
 	}
 
 	public hide() {
