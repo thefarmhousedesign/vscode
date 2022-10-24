@@ -45,7 +45,7 @@ export interface CodeActionShowOptions {
 export enum ActionListItemKind {
 	TerminalAction = 'terminal-action',
 	CodeAction = 'code-action',
-	Header = 'header'
+	Header = 'group-header'
 }
 
 class ListItemAction {
@@ -90,11 +90,10 @@ const codeActionGroups = Object.freeze<ActionGroup[]>([
 ]);
 
 abstract class ActionItemRenderer<ListItemAction> implements IListRenderer<ListItemAction, ICodeActionMenuTemplateData> {
-
 	abstract get templateId(): string;
 
 	renderTemplate(container: HTMLElement): ICodeActionMenuTemplateData {
-		container.classList.add('code-action');
+		container.classList.add(this.templateId);
 
 		const icon = document.createElement('div');
 		icon.className = 'icon';
@@ -125,7 +124,8 @@ class CodeActionItemRenderer implements ActionItemRenderer<ListItemAction> {
 	constructor(
 		private readonly keybindingResolver: CodeActionKeybindingResolver,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
-	) { }
+	) {
+	}
 
 	disposeTemplate(_templateData: ICodeActionMenuTemplateData): void {
 	}
@@ -185,7 +185,7 @@ class HeaderRenderer implements IListRenderer<ListItemAction, HeaderTemplateData
 	get templateId(): string { return ActionListItemKind.Header; }
 
 	renderTemplate(container: HTMLElement): HeaderTemplateData {
-		container.classList.add('group-header');
+		container.classList.add(this.templateId);
 
 		const text = document.createElement('span');
 		container.append(text);
@@ -276,7 +276,10 @@ abstract class ActionList<ListItemAction> extends Disposable {
 
 }
 
+// TODO: Take a look at user storage for this so it is preserved across windows and on reload.
+let showDisabled = false;
 class CodeActionList extends ActionList<ListItemAction> {
+
 	constructor(codeActions: readonly ListItemAction[],
 		showHeaders: boolean,
 		private readonly _onDidSelect: (action: CodeActionItem, options: { readonly preview: boolean }) => void,
@@ -290,6 +293,7 @@ class CodeActionList extends ActionList<ListItemAction> {
 
 		this.focusNext();
 	}
+
 	onListSelection(e: IListEvent<ListItemAction>): void {
 		if (!e.elements.length) {
 			return;
@@ -337,10 +341,6 @@ class CodeActionList extends ActionList<ListItemAction> {
 
 		return allMenuItems;
 	}
-
-	// TODO: Take a look at user storage for this so it is preserved across windows and on reload.
-	// let showDisabled = false;
-	// }
 
 	public layout(minWidth: number): number {
 		const numHeaders = this.allMenuItems.filter(item => item.kind === ActionListItemKind.Header).length;
@@ -442,7 +442,7 @@ export class CodeActionWidget extends Disposable {
 		const visibleContext = Context.Visible.bindTo(contextKeyService);
 		// todo show disabled
 
-		const actionsToShow = options.includeDisabledActions && (codeActions.validActions.length === 0) ? codeActions.allActions : codeActions.validActions;
+		const actionsToShow = options.includeDisabledActions && (showDisabled || codeActions.validActions.length === 0) ? codeActions.allActions : codeActions.validActions;
 		if (!actionsToShow.length) {
 			visibleContext.reset();
 			return;
@@ -555,7 +555,7 @@ export class CodeActionWidget extends Disposable {
 
 		this.hide();
 
-		// showDisabled = newShowDisabled;
+		showDisabled = newShowDisabled;
 
 		if (previousCtx) {
 			this.show(previousCtx.trigger, previousCtx.codeActions, previousCtx.anchor, previousCtx.container, previousCtx.options, previousCtx.delegate, previousCtx.contextKeyService);
