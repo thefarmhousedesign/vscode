@@ -611,7 +611,7 @@ export class CodeActionWidget extends Disposable {
 		}));
 
 		if (options.includeDisabledActions && codeActions.validActions.length > 0 && codeActions.allActions.length !== codeActions.validActions.length) {
-			actions.push(false ? {
+			actions.push(showDisabled ? {
 				id: 'hideMoreCodeActions',
 				label: localize('hideMoreCodeActions', 'Hide Disabled'),
 				enabled: true,
