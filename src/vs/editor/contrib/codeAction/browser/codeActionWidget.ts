@@ -215,21 +215,20 @@ abstract class ActionList<ListItemAction> extends Disposable {
 	public allMenuItems!: ListItemAction[];
 
 	constructor(
-		codeActions: readonly ListItemAction[],
+		items: readonly ListItemAction[],
 		showHeaders: boolean,
+		focusCondition: (e: ListItemAction) => boolean,
 		@IKeybindingService keybindingService: IKeybindingService,
 	) {
 		super();
 
 		this.domNode = document.createElement('div');
 		this.domNode.classList.add('codeActionList');
-		this.setActions(codeActions, showHeaders, keybindingService);
-		this._register(this.list.onMouseClick(e => this.onListClick(e)));
+		this.setActions(items, showHeaders, keybindingService);
+		this._register(this.list.onMouseClick(e => this.onListClick(e, focusCondition)));
 		this._register(this.list.onMouseOver(e => this.onListHover(e)));
 		this._register(this.list.onDidChangeFocus(() => this.list.domFocus()));
 		this._register(this.list.onDidChangeSelection(e => this.onListSelection(e)));
-
-
 	}
 
 
@@ -268,12 +267,9 @@ abstract class ActionList<ListItemAction> extends Disposable {
 		this.list.setFocus(typeof e.index === 'number' ? [e.index] : []);
 	}
 
-	private onListClick(e: IListMouseEvent<ListItemAction>): void {
-		if (e.element === null) {
-			return;
-		}
-		const elt = e.element as ListItemAction as any;
-		if (elt && elt.kind === ActionListItemKind.CodeAction && elt.action.action.disabled) {
+	private onListClick(e: IListMouseEvent<ListItemAction>, focusCondition: (e: ListItemAction) => boolean): void {
+		const element = e.element;
+		if (element && focusCondition(element)) {
 			this.list.setFocus([]);
 		}
 	}
@@ -285,7 +281,9 @@ class CodeActionList extends ActionList<ListItemAction> {
 		showHeaders: boolean,
 		private readonly _onDidSelect: (action: CodeActionItem, options: { readonly preview: boolean }) => void,
 		@IKeybindingService keybindingService: IKeybindingService) {
-		super(codeActions, showHeaders, keybindingService);
+		super(codeActions, showHeaders, (e: ListItemAction) => {
+			return !!e.action && e.kind === ActionListItemKind.CodeAction && !(e.action as any).disabled;
+		}, keybindingService);
 
 		this.allMenuItems = this.toMenuItems(codeActions, showHeaders);
 		this.list.splice(0, this.list.length, this.allMenuItems);
