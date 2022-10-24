@@ -210,9 +210,9 @@ abstract class ActionList<ListItemAction> extends Disposable {
 
 	public readonly domNode: HTMLElement;
 
-	public list!: List<ListItemAction>;
+	protected list!: List<ListItemAction>;
 
-	public allMenuItems!: ListItemAction[];
+	protected allMenuItems!: ListItemAction[];
 
 	constructor(
 		items: readonly ListItemAction[],
@@ -237,11 +237,11 @@ abstract class ActionList<ListItemAction> extends Disposable {
 	public abstract layout(minWidth: number): number;
 
 	public focusPrevious() {
-		this.list.focusPrevious(1, true, undefined,);
+		this.list.focusPrevious(1, true, undefined, this._focusCondition);
 	}
 
 	public focusNext() {
-		this.list.focusNext(1, true);
+		this.list.focusNext(1, true, undefined, this._focusCondition);
 	}
 
 	public acceptSelected(acceptType: string) {
