@@ -251,9 +251,9 @@ abstract class ActionList<ListItemAction> extends Disposable {
 		}
 
 		const focusIndex = focused[0];
-		const element = this.list.element(focusIndex) as object as any;
+		const element = this.list.element(focusIndex);
 
-		if (element.kind === ActionListItemKind.Header || (!this._focusCondition(element))) {
+		if (!this._focusCondition(element)) {
 			return;
 		}
 
