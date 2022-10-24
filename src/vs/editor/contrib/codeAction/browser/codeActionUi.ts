@@ -18,7 +18,7 @@ import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { CodeActionAutoApply, CodeActionItem, CodeActionSet, CodeActionTrigger } from '../common/types';
 import { CodeActionsState } from './codeActionModel';
-import { ActionListItemKind, CodeActionShowOptions, CodeActionWidget } from './codeActionWidget';
+import { CodeActionShowOptions, CodeActionWidget } from './codeActionWidget';
 import { LightBulbWidget } from './lightBulbWidget';
 
 export class CodeActionUi extends Disposable {
@@ -162,9 +162,7 @@ export class CodeActionUi extends Disposable {
 
 		CodeActionWidget.getOrCreateInstance(this._instantiationService).show(trigger, actions, anchor, editorDom, { ...options, showHeaders: this.shouldShowHeaders() }, {
 			onSelectCodeAction: async (action, trigger, options) => {
-				if (action.kind === ActionListItemKind.CodeAction && action.action) {
-					this.delegate.applyCodeAction(action.action as any, /* retrigger */ true, Boolean(options.preview || trigger.preview));
-				}
+				this.delegate.applyCodeAction(action, /* retrigger */ true, Boolean(options.preview || trigger.preview));
 			},
 			onHide: () => {
 				this._editor?.focus();

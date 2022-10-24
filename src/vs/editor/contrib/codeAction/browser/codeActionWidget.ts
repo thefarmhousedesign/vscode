@@ -32,7 +32,7 @@ export const Context = {
 };
 
 interface CodeActionWidgetDelegate {
-	onSelectCodeAction(action: ListItemAction, trigger: CodeActionTrigger, options: { readonly preview: boolean }): Promise<any>;
+	onSelectCodeAction(action: CodeActionItem, trigger: CodeActionTrigger, options: { readonly preview: boolean }): Promise<any>;
 	onHide(cancelled: boolean): void;
 }
 
@@ -126,8 +126,8 @@ class CodeActionItemRenderer implements ActionItemRenderer<ListItemAction> {
 		private readonly keybindingResolver: CodeActionKeybindingResolver,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 	) { }
+
 	disposeTemplate(_templateData: ICodeActionMenuTemplateData): void {
-		throw new Error('Method not implemented.');
 	}
 
 	get templateId(): string { return ActionListItemKind.CodeAction; }
@@ -217,14 +217,13 @@ abstract class ActionList<ListItemAction> extends Disposable {
 	constructor(
 		codeActions: readonly ListItemAction[],
 		showHeaders: boolean,
-		onDidSelect: (action: ListItemAction, options: { readonly preview: boolean }) => void,
 		@IKeybindingService keybindingService: IKeybindingService,
 	) {
 		super();
 
 		this.domNode = document.createElement('div');
 		this.domNode.classList.add('codeActionList');
-		this.setActions(codeActions, showHeaders, onDidSelect, keybindingService);
+		this.setActions(codeActions, showHeaders, keybindingService);
 		this._register(this.list.onMouseClick(e => this.onListClick(e)));
 		this._register(this.list.onMouseOver(e => this.onListHover(e)));
 		this._register(this.list.onDidChangeFocus(() => this.list.domFocus()));
@@ -234,7 +233,7 @@ abstract class ActionList<ListItemAction> extends Disposable {
 	}
 
 
-	public abstract setActions(codeActions: readonly ListItemAction[], showHeaders: boolean, onDidSelect: (action: ListItemAction, options: { readonly preview: boolean }) => void, keybindingService: IKeybindingService): void;
+	public abstract setActions(codeActions: readonly ListItemAction[], showHeaders: boolean, keybindingService: IKeybindingService): void;
 
 	public abstract layout(minWidth: number): number;
 
@@ -284,9 +283,9 @@ abstract class ActionList<ListItemAction> extends Disposable {
 class CodeActionList extends ActionList<ListItemAction> {
 	constructor(codeActions: readonly ListItemAction[],
 		showHeaders: boolean,
-		private readonly _onDidSelect: (action: ListItemAction, options: { readonly preview: boolean }) => void,
+		private readonly _onDidSelect: (action: CodeActionItem, options: { readonly preview: boolean }) => void,
 		@IKeybindingService keybindingService: IKeybindingService) {
-		super(codeActions, showHeaders, _onDidSelect, keybindingService);
+		super(codeActions, showHeaders, keybindingService);
 
 		this.allMenuItems = this.toMenuItems(codeActions, showHeaders);
 		this.list.splice(0, this.list.length, this.allMenuItems);
@@ -373,7 +372,7 @@ class CodeActionList extends ActionList<ListItemAction> {
 		return width;
 	}
 
-	public setActions(codeActions: readonly ListItemAction[], showHeaders: boolean, onDidSelect: (action: ListItemAction, options: { readonly preview: boolean }) => void, keybindingService: IKeybindingService): void {
+	public setActions(codeActions: readonly ListItemAction[], showHeaders: boolean, keybindingService: IKeybindingService): void {
 		this.list = this._register(new List('codeActionWidget', this.domNode, {
 			getHeight: element => element.kind === ActionListItemKind.Header ? this.headerLineHeight : this.codeActionLineHeight,
 			getTemplateId: element => element.kind,
