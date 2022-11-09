@@ -17,8 +17,7 @@ import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import { CodeActionTriggerType } from 'vs/editor/common/languages';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
 import { acceptSelectedCodeActionCommand, applyCodeAction, ApplyCodeActionReason, codeActionCommandId, fixAllCommandId, organizeImportsCommandId, previewSelectedCodeActionCommand, refactorCommandId, refactorPreviewCommandId, sourceActionCommandId } from 'vs/editor/contrib/codeAction/browser/codeAction';
-import { CodeActionUi } from 'vs/editor/contrib/codeAction/browser/codeActionUi';
-import { CodeActionWidget, Context } from 'vs/editor/contrib/codeAction/browser/codeActionWidget';
+import { CodeActionUi, Context } from 'vs/editor/contrib/codeAction/browser/codeActionUi';
 import { MessageController } from 'vs/editor/contrib/message/browser/messageController';
 import * as nls from 'vs/nls';
 import { Action2, registerAction2 } from 'vs/platform/actions/common/actions';
@@ -29,6 +28,7 @@ import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { CodeActionModel, CodeActionsState, SUPPORTED_CODE_ACTIONS } from './codeActionModel';
 import { CodeActionAutoApply, CodeActionCommandArgs, CodeActionFilter, CodeActionItem, CodeActionKind, CodeActionSet, CodeActionTrigger, CodeActionTriggerSource } from '../common/types';
+import { ActionWidgetService } from 'vs/platform/actionWidgetService/browser/actionWidgetService';
 
 function contextKeyForSupportedActions(kind: CodeActionKind) {
 	return ContextKeyExpr.regex(
@@ -101,7 +101,7 @@ export class CodeActionController extends Disposable implements IEditorContribut
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IEditorProgressService progressService: IEditorProgressService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
-		@ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
+		@ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService
 	) {
 		super();
 
@@ -430,7 +430,7 @@ registerAction2(class extends Action2 {
 	}
 
 	run(): void {
-		CodeActionWidget.INSTANCE?.hide();
+		ActionWidgetService.INSTANCE?.hide();
 	}
 });
 
@@ -453,7 +453,7 @@ registerAction2(class extends Action2 {
 	}
 
 	run(): void {
-		CodeActionWidget.INSTANCE?.focusPrevious();
+		ActionWidgetService.INSTANCE?.focusPrevious();
 	}
 });
 
@@ -476,7 +476,7 @@ registerAction2(class extends Action2 {
 	}
 
 	run(): void {
-		CodeActionWidget.INSTANCE?.focusNext();
+		ActionWidgetService.INSTANCE?.focusNext();
 	}
 });
 
@@ -498,7 +498,7 @@ registerAction2(class extends Action2 {
 	}
 
 	run(): void {
-		CodeActionWidget.INSTANCE?.acceptSelected();
+		ActionWidgetService.INSTANCE?.acceptSelected();
 	}
 });
 
@@ -519,7 +519,7 @@ registerAction2(class extends Action2 {
 	}
 
 	run(): void {
-		CodeActionWidget.INSTANCE?.acceptSelected({ preview: true });
+		ActionWidgetService.INSTANCE?.acceptSelected({ preview: true });
 	}
 });
 

@@ -13,15 +13,22 @@ import { IPosition, Position } from 'vs/editor/common/core/position';
 import { ScrollType } from 'vs/editor/common/editorCommon';
 import { CodeActionTriggerType } from 'vs/editor/common/languages';
 import { MessageController } from 'vs/editor/contrib/message/browser/messageController';
+import { localize } from 'vs/nls';
+import { ActionWidgetService, CodeActionShowOptions } from 'vs/platform/actionWidgetService/browser/actionWidgetService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { CodeActionAutoApply, CodeActionItem, CodeActionSet, CodeActionTrigger } from '../common/types';
 import { CodeActionsState } from './codeActionModel';
-import { CodeActionShowOptions, CodeActionWidget } from './codeActionWidget';
 import { LightBulbWidget } from './lightBulbWidget';
 
+export const Context = {
+	Visible: new RawContextKey<boolean>('codeActionMenuVisible', false, localize('codeActionMenuVisible', "Whether the code action list widget is visible"))
+};
+
 export class CodeActionUi extends Disposable {
+
+	declare readonly _serviceBrand: undefined;
 	private readonly _lightBulbWidget: Lazy<LightBulbWidget>;
 	private readonly _activeCodeActions = this._register(new MutableDisposable<CodeActionSet>());
 
@@ -35,11 +42,9 @@ export class CodeActionUi extends Disposable {
 			applyCodeAction: (action: CodeActionItem, regtriggerAfterApply: boolean, preview: boolean) => Promise<void>;
 		},
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
-		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
-		@IInstantiationService private readonly _instantiationService: IInstantiationService,
+		@IInstantiationService private readonly _instantiationService: IInstantiationService
 	) {
 		super();
-
 
 		this._lightBulbWidget = new Lazy(() => {
 			const widget = this._register(_instantiationService.createInstance(LightBulbWidget, this._editor, quickFixActionId, preferredFixActionId));
@@ -47,7 +52,7 @@ export class CodeActionUi extends Disposable {
 			return widget;
 		});
 
-		this._register(this._editor.onDidLayoutChange(() => CodeActionWidget.INSTANCE?.hide()));
+		this._register(this._editor.onDidLayoutChange(() => ActionWidgetService.getOrCreateInstance(this._instantiationService).hide()));
 	}
 
 	override dispose() {
@@ -115,7 +120,7 @@ export class CodeActionUi extends Disposable {
 			this.showCodeActionList(newState.trigger, actions, this.toCoords(newState.position), { includeDisabledActions, fromLightbulb: false, showHeaders: this.shouldShowHeaders() });
 		} else {
 			// auto magically triggered
-			if (CodeActionWidget.INSTANCE?.isVisible) {
+			if (ActionWidgetService.getOrCreateInstance(this._instantiationService).isVisible) {
 				// TODO: Figure out if we should update the showing menu?
 				actions.dispose();
 			} else {
@@ -160,14 +165,14 @@ export class CodeActionUi extends Disposable {
 
 		const anchor = Position.isIPosition(at) ? this.toCoords(at) : at;
 
-		CodeActionWidget.getOrCreateInstance(this._instantiationService).show(trigger, actions, anchor, editorDom, { ...options, showHeaders: this.shouldShowHeaders() }, {
-			onSelectCodeAction: async (action, trigger, options) => {
+		ActionWidgetService.getOrCreateInstance(this._instantiationService)?.showActionWidget(Context.Visible, trigger, actions, anchor, editorDom, { ...options, showHeaders: this.shouldShowHeaders() }, {
+			onSelectAction: async (action: CodeActionItem, trigger: CodeActionTrigger, options: { preview: any; }) => {
 				this.delegate.applyCodeAction(action, /* retrigger */ true, Boolean(options.preview || trigger.preview));
 			},
 			onHide: () => {
 				this._editor?.focus();
 			},
-		}, this._contextKeyService);
+		});
 	}
 
 	private toCoords(position: IPosition): IAnchor {
