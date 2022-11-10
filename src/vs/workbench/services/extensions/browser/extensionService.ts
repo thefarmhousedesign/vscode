@@ -117,7 +117,8 @@ export class ExtensionService extends AbstractExtensionService implements IExten
 				return {
 					autoStart: true,
 					allExtensions: allExtensions,
-					myExtensions: localWebWorkerExtensions.map(extension => extension.identifier)
+					myExtensions: localWebWorkerExtensions.map(extension => extension.identifier),
+					webPackagePaths: (self as any as { webPackagePaths: Record<string, string> }).webPackagePaths
 				};
 			}
 		};

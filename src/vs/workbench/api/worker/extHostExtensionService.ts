@@ -62,6 +62,34 @@ export class ExtHostExtensionService extends AbstractExtHostExtensionService {
 			performance.mark(`code/extHost/willFetchExtensionCode/${extensionId}`);
 		}
 
+
+		// FETCH and EVAL vscode-tas-client
+		const myUrl = this._initData.webPackagePaths?.['vscode-tas-client'];
+		if (myUrl) {
+			const myResponse = await fetch(myUrl);
+			if (myResponse.status !== 200) {
+				throw new Error(myResponse.statusText);
+			}
+			const mySourceURL = `${myUrl}#vscode-extension`;
+			const mySource = await myResponse.text() + `\n//# sourceURL=${mySourceURL}`;
+
+			let myinitFn: Function;
+			try {
+				myinitFn = new Function('module', 'exports', 'require', mySource);
+			} catch (err) {
+				console.error(`Loading code failed: ${err.message}`);
+				console.error(err);
+				throw err;
+			}
+			const myExports = {};
+			const myModule = { exports: myExports };
+			const myRequire = (request: string) => {
+				throw new Error(`Unexpected require call: ${request}`);
+			};
+			myinitFn(myModule, myExports, myRequire);
+		}
+
+
 		// First resolve the extension entry point URI to something we can load using `fetch`
 		// This needs to be done on the main thread due to a potential `resourceUriProvider` (workbench api)
 		// which is only available in the main thread
@@ -104,6 +132,9 @@ export class ExtHostExtensionService extends AbstractExtHostExtensionService {
 		const _module = { exports: _exports };
 		const _require = (request: string) => {
 			const result = this._fakeModules!.getModule(request, module);
+			if (request === 'vscode-tas-client') {
+				return myExports;
+			}
 			if (result === undefined) {
 				throw new Error(`Cannot load module '${request}'`);
 			}

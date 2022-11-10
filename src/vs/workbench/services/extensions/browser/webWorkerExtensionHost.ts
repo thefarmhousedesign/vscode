@@ -36,6 +36,7 @@ export interface IWebWorkerExtensionHostInitData {
 	readonly autoStart: boolean;
 	readonly allExtensions: IExtensionDescription[];
 	readonly myExtensions: ExtensionIdentifier[];
+	readonly webPackagePaths?: Record<string, string>;
 }
 
 export interface IWebWorkerExtensionHostDataProvider {
@@ -323,7 +324,8 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				connectionData: null,
 				isRemote: false
 			},
-			uiKind: platform.isWeb ? UIKind.Web : UIKind.Desktop
+			uiKind: platform.isWeb ? UIKind.Web : UIKind.Desktop,
+			webPackagePaths: initData.webPackagePaths
 		};
 	}
 }

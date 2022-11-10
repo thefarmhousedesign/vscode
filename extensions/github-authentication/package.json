@@ -19,7 +19,8 @@
   ],
   "activationEvents": [
     "onAuthenticationRequest:github",
-    "onAuthenticationRequest:github-enterprise"
+    "onAuthenticationRequest:github-enterprise",
+    "*"
   ],
   "capabilities": {
     "virtualWorkspaces": true,
@@ -66,9 +67,7 @@
   },
   "dependencies": {
     "node-fetch": "2.6.7",
-    "uuid": "8.1.0",
-    "@vscode/extension-telemetry": "0.7.0-preview",
-    "vscode-tas-client": "^0.1.47"
+    "uuid": "8.1.0"
   },
   "devDependencies": {
     "@types/node": "16.x",
