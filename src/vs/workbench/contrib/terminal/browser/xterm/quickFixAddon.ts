@@ -335,19 +335,25 @@ export function convertToQuickFixOptions(quickFix: IExtensionTerminalQuickFix): 
 		commandLineMatcher: quickFix.commandLineMatcher,
 		outputMatcher: quickFix.outputMatcher,
 		type,
-		getQuickFixes: type === 'command' ? (matchResult: TerminalQuickFixMatchResult) => {
-			const matches = matchResult.outputMatch;
-			const commandToRun = quickFix.commandToRun;
-			if (!matches || !commandToRun) {
+		getQuickFixes: type === 'command' ? (matchResult: TerminalQuickFixMatchResult, command: ITerminalCommand) => {
+			const commandLineGroups = matchResult.commandLineMatch.groups;
+			const outputGroups = matchResult.outputMatch?.groups;
+			let commandToRun = quickFix.commandToRun;
+			if (!outputGroups || !commandToRun) {
 				return;
 			}
-			const groups = matches.groups;
-			if (!groups) {
-				return;
+			const allGroups = commandLineGroups ? Object.entries(commandLineGroups).concat(Object.entries(outputGroups)) : outputGroups;
+
+			const [originalGroup, newGroup] = commandToRun.split('commandReplace:')?.[1].split(';');
+			if (originalGroup && newGroup) {
+				commandToRun = commandToRun.replace('commandToRun:', '');
+				console.log(originalGroup, newGroup);
+				confsole.log(command);
+				consolfe.log(commandToRun);
 			}
 			const actions: TerminalQuickFixAction[] = [];
 			let fixedCommand = commandToRun;
-			for (const [key, value] of Object.entries(groups)) {
+			for (const [key, value] of Object.entries(allGroups)) {
 				const varToResolve = '${group:' + `${key}` + '}';
 				if (!commandToRun.includes(varToResolve)) {
 					return [];
